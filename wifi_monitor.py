@@ -419,7 +419,7 @@ small{color:#666}
 #xaxis{position:relative;height:22px}
 #xaxis div{position:absolute;top:4px;font-size:12px;color:#666;white-space:nowrap}
 #wrap{display:flex;gap:30px;align-items:stretch}
-#left{width:300px;flex:none} #right{flex:1;min-width:0}
+#left{width:340px;flex:none} #right{flex:1;min-width:0}
 #left,#right{display:flex;flex-direction:column} #left table,#right table{flex:1}
 #page{display:flex;gap:30px;align-items:stretch}
 #main{flex:1;min-width:0} #side{width:220px;flex:none;display:flex;flex-direction:column}
@@ -427,6 +427,8 @@ small{color:#666}
 #log{position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;padding:6px 8px;text-align:left;font-size:13px}
 #log div{margin-bottom:4px;cursor:pointer} #log span{color:#666}
 th[title]{cursor:help}
+#me th,#me td,#aps td{white-space:nowrap}
+body{font-variant-numeric:tabular-nums}
 #charthead{position:relative;display:flow-root}
 #tabs{position:absolute;left:0;bottom:0}
 #tabs button{font-size:13px;padding:4px 14px;border:1px solid #ccc;border-bottom:none;background:#f0f0f0;cursor:pointer;margin-right:2px}
