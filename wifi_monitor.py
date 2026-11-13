@@ -302,11 +302,11 @@ def write_log(minute, samples, aps):
     """1분에 한 줄: 그 1분 동안의 평균·최대값."""
     last = samples[-1]
     with lock:
-        day.append({"t": minute[-5:], "ping": avg([s["ping"] for s in samples]) or None})
+        day.append({"t": minute[-5:], "ping": peak([s["ping"] for s in samples]) or None})
     append_csv("연결", ["시각", "측정횟수", "연결AP", "채널", "신호평균(dBm)", "신호최저(dBm)",
                        "받기(Mbps)", "보내기(Mbps)", "공유기지연평균(ms)", "공유기지연최대(ms)",
                        "손실평균(%)", "손실최대(%)", "인터넷지연평균(ms)", "인터넷지연최대(ms)",
-                       "공유기끊김횟수", "인터넷끊김횟수"],
+                       "공유기끊김횟수", "인터넷끊김횟수", "공유기지연_3초최대(ms)"],
                [[minute, len(samples), last.get("ap", ""), last.get("channel", ""),
                  avg([s.get("signal") for s in samples]),
                  min([s["signal"] for s in samples if s.get("signal") is not None], default=""),
@@ -315,7 +315,8 @@ def write_log(minute, samples, aps):
                  avg([s["loss"] for s in samples]), peak([s["loss"] for s in samples]),
                  avg([s["internet"] for s in samples]), peak([s["internet"] for s in samples]),
                  sum(1 for s in samples if s["ping"] is None),
-                 sum(1 for s in samples if s["internet"] is None)]])
+                 sum(1 for s in samples if s["internet"] is None),
+                 peak([s["ping"] for s in samples])]])
     append_csv("AP", ["시각", "AP", "대역", "채널", "신호(dBm)", "같은채널_우리AP",
                      "같은채널_주변AP", "주소"],
                [[minute, a["ap"], a["band"], a["channel"], a["signal"], a["same_channel_mine"],
@@ -334,14 +335,31 @@ def load_notes():
 
 
 def load_day():
-    """다시 시작해도 아침부터의 그래프가 보이도록 로그 파일에서 읽어 온다."""
+    """다시 시작해도 아침부터의 그래프가 보이도록 로그 파일에서 읽어 온다.
+
+    그래프 값은 '그 1분 중 가장 높았던 3초 측정값'이다.
+    이 칸이 없던 예전 줄은 어림값을 쓴다(평균과 '최대 ÷ 5' 중 큰 값 — 실제보다 낮을 수 있다).
+    """
     path = os.path.join(LOG_DIR, "연결_%s.csv" % time.strftime("%Y-%m-%d"))
     if not os.path.exists(path):
         return
     with open(path, newline="", encoding="utf-8-sig") as f:
-        for row in list(csv.reader(f))[1:]:
-            if len(row) >= 9:
-                day.append({"t": row[0][-5:], "ping": float(row[8]) if row[8] else None})
+        rows = list(csv.reader(f))
+    if rows and len(rows[0]) == 16:   # 예전 파일: 제목 줄에 새 칸 이름을 붙인다
+        rows[0].append("공유기지연_3초최대(ms)")
+        with open(path + ".tmp", "w", newline="", encoding="utf-8-sig") as f:
+            csv.writer(f).writerows(rows)
+        os.replace(path + ".tmp", path)
+    for row in rows[1:]:
+        if len(row) < 10:
+            continue
+        if len(row) >= 17 and row[16]:
+            value = float(row[16])
+        elif row[8] and row[9]:
+            value = round(max(float(row[8]), float(row[9]) / 5), 1)
+        else:
+            value = None
+        day.append({"t": row[0][-5:], "ping": value})
 
 
 def add_note(text):
