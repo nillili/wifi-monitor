@@ -1,3 +1,5 @@
 logs/
 sessions/
 __pycache__/
+docs/
+output/
